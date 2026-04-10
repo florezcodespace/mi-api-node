@@ -50,8 +50,51 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const updateUser = async (req, res) => {
+  try {
+    const { nombre, correo, password } = req.body;
+
+    if (!nombre || !correo || !password) {
+      return res.status(400).json({
+        message: "nombre, correo y password son obligatorios",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      correo: correo.toLowerCase(),
+      _id: { $ne: req.params.id },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ message: "El correo ya esta registrado" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        nombre,
+        correo,
+        password,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    return res.json(user);
+  } catch (error) {
+    return res.status(500).json({ message: "Error al actualizar usuario" });
+  }
+};
+
 module.exports = {
   getUsers,
   createUser,
   deleteUser,
+  updateUser,
 };
